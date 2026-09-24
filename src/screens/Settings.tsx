@@ -11,7 +11,7 @@ import { fmtDay } from '../lib/dates'
 import { ProfileEdit } from './Setup'
 import { TogetherSheet } from './Us'
 
-const APP_VERSION = '1.1.0'
+const APP_VERSION = '1.2.0'
 
 function ago(ts?: number) {
   if (!ts) return 'ещё не было'

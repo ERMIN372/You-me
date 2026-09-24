@@ -20,6 +20,8 @@ export interface Profile {
   g?: 'm' | 'f'
   /** Имя в родительном падеже: «от Софьи». Пусто — угадываем. */
   gen?: string
+  /** День рождения YYYY-MM-DD — для календаря и напоминания о хотелках. */
+  birthday?: string
 }
 
 export interface UsersConfig extends Rec {
@@ -91,7 +93,9 @@ export type PlanKind = 'trip' | 'repair' | 'purchase' | 'celebration' | 'other'
 export interface Plan extends Rec {
   title: string
   kind: PlanKind
+  /** Цель (копилка) или лимит (бюджет). */
   budget: number
+  mode?: 'goal' | 'budget'
   currency: string
   note?: string
   archived?: boolean
@@ -161,6 +165,20 @@ export interface CapsuleRead extends Rec {
   user: UserId
 }
 
+/** Тайное голосование. Голос партнёра виден только после своего. */
+export interface Vote extends Rec {
+  question: string
+  options: string[]
+}
+
+/** Голос. id = `${voteId}:${user}` — у каждого своя запись. */
+export interface Ballot extends Rec {
+  voteId: string
+  user: UserId
+  choice: number
+  comment?: string
+}
+
 export interface Device extends Rec {
   user: UserId
   sub: PushSubscriptionJSON
@@ -184,6 +202,8 @@ export interface Schema {
   tasks: Task
   capsules: Capsule
   reads: CapsuleRead
+  votes: Vote
+  ballots: Ballot
   devices: Device
 }
 
@@ -202,6 +222,8 @@ export const COLLECTIONS: CollName[] = [
   'tasks',
   'capsules',
   'reads',
+  'votes',
+  'ballots',
   'devices',
 ]
 

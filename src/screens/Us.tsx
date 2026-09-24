@@ -1,16 +1,16 @@
 import { useState } from 'preact/hooks'
 import { CATEGORIES } from '../data/questions'
 import { occurrences } from '../lib/calendar'
-import { addDays, days, diffDays, fmtDay, fmtDayLong, ordinalGen, parts, plural, today as todayIn } from '../lib/dates'
+import { addDays, days, diffDays, fmtDay, fmtDayLong, nextOccurrence, ordinalGen, parts, plural, today as todayIn } from '../lib/dates'
 import { questionFor } from '../lib/qday'
 import { other } from '../lib/types'
-import { nextLockedForMe, together, unreadForMe, yearStats } from '../lib/us'
-import { colorOf, genOf, me, meta, nameOf, store, todayStr, useList, users, verb } from '../state'
+import { nextLockedForMe, together, unreadForMe, voteView, yearStats } from '../lib/us'
+import { colorOf, genOf, me, meta, nameOf, profilePeople, store, todayStr, useList, users, verb } from '../state'
 import { IChevL, IChevR, IMail, ITasks } from '../ui/icons'
 import { Duo, Field, Glow, Sheet, toast } from '../ui/kit'
 import { UpItem } from './Calendar'
 
-export type Go = (tab: 'calendar' | 'wishes' | 'plans' | 'tasks' | 'shopping' | 'cards' | 'question' | 'capsules') => void
+export type Go = (tab: 'calendar' | 'wishes' | 'plans' | 'tasks' | 'shopping' | 'cards' | 'question' | 'capsules' | 'votes') => void
 
 export function UsScreen({ go, openSettings }: { go: Go; openSettings: () => void }) {
   const u = users()
@@ -19,7 +19,10 @@ export function UsScreen({ go, openSettings }: { go: Go; openSettings: () => voi
   const t = todayStr()
   const m = meta()
   const events = useList('events')
-  const people = useList('people')
+  const people = [...useList('people'), ...profilePeople()]
+  const votes = useList('votes')
+  const ballots = useList('ballots')
+  const reservations = useList('reservations')
   const wishes = useList('wishes')
   const plans = useList('plans')
   const tasks = useList('tasks')
@@ -45,6 +48,16 @@ export function UsScreen({ go, openSettings }: { go: Go; openSettings: () => voi
   const locked = nextLockedForMe(capsules, i, t)
   const freeTasks = tasks.filter((x) => !x.done && !x.assignee)
   const myTasks = tasks.filter((x) => !x.done && x.assignee === i)
+  const voteViews = votes.map((v) => voteView(v, ballots, i))
+  const votesWaiting = voteViews.filter((x) => !x.mine).length
+  const votesDone = voteViews.filter((x) => x.done).length
+
+  // ДР партнёра скоро → напомнить про его хотелки
+  const pb = u[p].birthday
+  const pNext = pb ? nextOccurrence(Number(pb.slice(5, 7)), Number(pb.slice(8, 10)), t) : null
+  const pIn = pNext ? diffDays(t, pNext) : Infinity
+  const pWishes = wishes.filter((w) => w.owner === p && !w.gifted)
+  const iReserved = pWishes.filter((w) => reservations.some((r) => r.wishId === w.id)).length
 
   return (
     <div class="screen">
@@ -144,6 +157,19 @@ export function UsScreen({ go, openSettings }: { go: Go; openSettings: () => voi
             <IChevR size={18} />
           </button>
         )}
+        {pIn <= 14 && (
+          <button class="row-link accent tap" style={{ borderLeftColor: colorOf(p) }} onClick={() => go('wishes')}>
+            <span style={{ fontSize: 24 }}>🎁</span>
+            <div class="grow">
+              <div class="t">{pIn === 0 ? `Сегодня ДР ${genOf(p)}!` : `ДР ${genOf(p)} через ${days(pIn)}`}</div>
+              <div class="s">
+                {pWishes.length ? `в хотелках ${pWishes.length}` : 'хотелок нет — спроси намёком'}
+                {iReserved ? ` · ты ${verb(i, 'забронировал', 'забронировала')} ${iReserved}` : pWishes.length ? ' · подарок не выбран' : ''}
+              </div>
+            </div>
+            <IChevR size={18} />
+          </button>
+        )}
         {soon.map((o) => (
           <UpItem key={o.key} o={o} today={t} onClick={() => go('calendar')} />
         ))}
@@ -160,6 +186,16 @@ export function UsScreen({ go, openSettings }: { go: Go; openSettings: () => voi
             <IChevR size={18} />
           </button>
         )}
+        <button class="row-link tap" onClick={() => go('votes')}>
+          <span style={{ fontSize: 22, width: 26, textAlign: 'center' }}>🗳️</span>
+          <div class="grow">
+            <div class="t">Тайные голосования</div>
+            <div class="s" style={votesWaiting ? { color: colorOf(p) } : undefined}>
+              {votesWaiting ? `ждут твоего голоса: ${votesWaiting}` : votesDone ? `итогов: ${votesDone}` : 'спорный вопрос — голосуете оба'}
+            </div>
+          </div>
+          <IChevR size={18} />
+        </button>
         <button class="row-link tap" onClick={() => go('capsules')}>
           <IMail size={26} style={{ color: 'var(--muted)' }} />
           <div class="grow">

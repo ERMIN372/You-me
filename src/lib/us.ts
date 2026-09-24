@@ -1,6 +1,6 @@
 // Чистая логика для экрана «Мы»: вместе N дней, годовщины, итоги года, статусы капсул.
 import { diffDays, nextOccurrence, parts } from './dates'
-import type { Answer, CalEvent, Capsule, CapsuleRead, Plan, Task, UserId, Wish } from './types'
+import type { Answer, Ballot, CalEvent, Capsule, CapsuleRead, Plan, Task, UserId, Vote, Wish } from './types'
 
 export interface Together {
   days: number
@@ -96,3 +96,22 @@ export function nextLockedForMe(capsules: Capsule[], me: UserId, today: string) 
     .filter((c) => c.by !== me && readers(c).includes(me) && capsuleState(c, me, today) === 'locked')
     .sort((a, b) => a.openAt.localeCompare(b.openAt))[0]
 }
+
+export interface VoteView {
+  mine?: Ballot
+  theirs?: Ballot
+  /** Голос партнёра можно показать (я уже проголосовал). */
+  reveal: boolean
+  done: boolean
+  match: boolean
+}
+
+export function voteView(v: Vote, ballots: Ballot[], me: UserId): VoteView {
+  const mine = ballots.find((b) => b.voteId === v.id && b.user === me)
+  const theirs = ballots.find((b) => b.voteId === v.id && b.user !== me)
+  const done = !!mine && !!theirs
+  return { mine, theirs, reveal: !!mine, done, match: done && mine!.choice === theirs!.choice }
+}
+
+/** Голосования, где ждут моего голоса. */
+export const votesWaitingForMe = (votes: Vote[], ballots: Ballot[], me: UserId) => votes.filter((v) => !voteView(v, ballots, me).mine)

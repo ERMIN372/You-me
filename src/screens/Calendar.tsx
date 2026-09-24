@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'preact/hooks'
 import { KIND_LABEL, occurrences, weekBars, type Occurrence } from '../lib/calendar'
 import { addDays, dayNum, diffDays, fmtDay, fmtDayLong, MONTHS, MONTHS_GEN, MONTHS_SHORT, monthGrid, nextOccurrence, parts, relLabel, WD_SHORT, years } from '../lib/dates'
 import { other, type CalEvent, type EventKind, type Person, type UserId } from '../lib/types'
-import { colorOf, me, nameOf, store, todayStr, useList, users, verb } from '../state'
+import { colorOf, me, nameOf, profilePeople, store, todayStr, useList, users, verb } from '../state'
 import { IChevL, IChevR, IPlus, IUsers } from '../ui/icons'
 import { Dot, Duo, Empty, Field, Glow, Seg, Sheet, Toggle, toast } from '../ui/kit'
 
@@ -11,7 +11,7 @@ const occColor = (o: Occurrence) => (o.kind === 'trip' ? TRIP : colorOf(o.who))
 
 export function CalendarScreen({ openSettings }: { openSettings: () => void }) {
   const events = useList('events')
-  const people = useList('people')
+  const people = [...useList('people'), ...profilePeople()]
   const t = todayStr()
   const [ym, setYm] = useState(() => ({ y: parts(t).y, m: parts(t).m }))
   const [sel, setSel] = useState<string | null>(null)
@@ -215,11 +215,17 @@ function OccDetail({ o, onClose, onEdit }: { o: Occurrence; onClose: () => void;
           </span>
         </div>
       </div>
-      <div class="btns">
-        <button class="btn ghost" onClick={onEdit}>
-          Изменить
-        </button>
-      </div>
+      {o.person?.id.startsWith('me:') ? (
+        <p class="muted" style={{ fontSize: 14 }}>
+          Это день рождения из профиля — меняется в Настройках.
+        </p>
+      ) : (
+        <div class="btns">
+          <button class="btn ghost" onClick={onEdit}>
+            Изменить
+          </button>
+        </div>
+      )}
     </Sheet>
   )
 }

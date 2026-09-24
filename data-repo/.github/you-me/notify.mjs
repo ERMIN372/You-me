@@ -29,6 +29,22 @@ const devicesColl = read('devices')
 const devices = alive(devicesColl)
 let pruned = false
 
+const guessGen = (n, g) => {
+  n = (n || '').trim()
+  if (n.length < 3 || /\s/.test(n)) return n
+  const low = n.toLowerCase()
+  const last = low.slice(-1)
+  const prev = low.slice(-2, -1)
+  if (last === 'я') return n.slice(0, -1) + 'и'
+  if (last === 'а') return n.slice(0, -1) + ('гкхжшщч'.includes(prev) ? 'и' : 'ы')
+  if (g === 'f') return n
+  if (last === 'й' || last === 'ь') return n.slice(0, -1) + 'я'
+  if (/[бвгджзклмнпрстфхцчшщ]/.test(last)) return n + 'а'
+  return n
+}
+const gen = (u) => users[u]?.gen?.trim() || guessGen(users[u]?.name, users[u]?.g)
+const SYM = { RUB: '₽', EUR: '€', USD: '$', KZT: '₸', GEL: '₾', AMD: '֏', TRY: '₺', THB: '฿', CNY: '¥', JPY: 'JP¥', GBP: '£', BYN: 'Br' }
+const money = (n, c) => `${Number(n).toLocaleString('ru-RU').replace(/[\u00a0\u202f]/g, ' ')} ${SYM[c] ?? c}`
 const verb = (u, m, f) => (users[u]?.g === 'f' ? f : users[u]?.g === 'm' ? m : `${m}(а)`)
 
 async function sendTo(to, msg) {
@@ -107,6 +123,33 @@ async function morning() {
     const text = d === 0 ? `✅ Сегодня срок: ${x.title}` : `⏰ Просрочено: ${x.title}`
     for (const u of x.assignee ? [x.assignee] : ['a', 'b']) personal[u].push(x.assignee ? text : `${text} (свободная)`)
   }
+  // ДР из профилей: имениннику — поздравление, партнёру — напоминание про хотелки (брони видит только он)
+  const wishesAll = alive(read('wishes'))
+  const resv = alive(read('reservations'))
+  const wishHint = { a: false, b: false }
+  for (const u of ['a', 'b']) {
+    const bd = users[u].birthday
+    if (!bd || !/^\d{4}-\d{2}-\d{2}$/.test(bd)) continue
+    const [, bm, bdd] = bd.split('-').map(Number)
+    const o = u === 'a' ? 'b' : 'a'
+    for (const y of [Y, Y + 1]) {
+      const d = dn(onYear(bm, bdd, y)) - t
+      if (d === 0) {
+        personal[o].push(`🎂 Сегодня ДР ${gen(u)}!`)
+        personal[u].push(`🎉 С днём рождения, ${users[u].name}!`)
+      }
+      if (d === 14 || d === 7 || d === 2) {
+        const open = wishesAll.filter((w) => w.owner === u && !w.gifted)
+        const top = [...open].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0)).slice(0, 3)
+        const booked = open.filter((w) => resv.some((r) => r.wishId === w.id))
+        let text = `🎁 Через ${d} ${plural(d, 'день', 'дня', 'дней')} ДР ${gen(u)}.`
+        text += top.length ? ` В хотелках: ${top.map((w) => (w.price != null ? `${w.title} (${money(w.price, w.currency)})` : w.title)).join(', ')}` : ' Хотелок нет — самое время спросить намёком.'
+        if (booked.length) text += `. Ты бронируешь: ${booked.map((w) => w.title).join(', ')}`
+        personal[o].push(text)
+        wishHint[o] = true
+      }
+    }
+  }
   // Капсулы, которые открываются сегодня
   for (const c of alive(read('capsules'))) {
     if (dn(c.openAt) !== t) continue
@@ -122,7 +165,7 @@ async function morning() {
       continue
     }
     const letter = personal[u].some((l) => l.startsWith('💌'))
-    await sendTo(u, { title: lines.length || personal[u].length ? 'Сегодня' : 'Скоро', body: all.join('\n'), tag: `morning:${today}`, url: letter ? '#capsules' : '#us' })
+    await sendTo(u, { title: lines.length || personal[u].length ? 'Сегодня' : 'Скоро', body: all.join('\n'), tag: `morning:${today}`, url: letter ? '#capsules' : wishHint[u] ? '#wishes' : '#us' })
   }
 }
 

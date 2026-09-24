@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import { other } from './lib/types'
-import { unreadForMe } from './lib/us'
+import { unreadForMe, voteView } from './lib/us'
 import { isDemo, me, todayStr, useList, useStoreVersion } from './state'
 import { CalendarScreen } from './screens/Calendar'
 import { CapsulesScreen } from './screens/Capsules'
@@ -11,12 +11,13 @@ import { SettingsSheet } from './screens/Settings'
 import { ShoppingList } from './screens/Shopping'
 import { TaskList } from './screens/Tasks'
 import { UsScreen } from './screens/Us'
+import { VotesScreen } from './screens/Votes'
 import { WishList } from './screens/Wishes'
 import { ICalendar, ICard, ICloudOff, IGift, IPlus, ITasks, IUs } from './ui/icons'
 import { Duo, Glow, Seg, Toasts } from './ui/kit'
 
-type Tab = 'us' | 'calendar' | 'wishes' | 'plans' | 'tasks' | 'shopping' | 'cards' | 'question' | 'capsules'
-const TABS: Tab[] = ['us', 'calendar', 'wishes', 'plans', 'tasks', 'shopping', 'cards', 'question', 'capsules']
+type Tab = 'us' | 'calendar' | 'wishes' | 'plans' | 'tasks' | 'shopping' | 'cards' | 'question' | 'capsules' | 'votes'
+const TABS: Tab[] = ['us', 'calendar', 'wishes', 'plans', 'tasks', 'shopping', 'cards', 'question', 'capsules', 'votes']
 
 const readHash = (): Tab => {
   const h = location.hash.replace('#', '') as Tab
@@ -54,14 +55,17 @@ export function App({ onLogout }: { onLogout: () => void }) {
   const capsules = useList('capsules')
   const reads = useList('reads')
   const tasks = useList('tasks')
+  const votes = useList('votes')
+  const ballots = useList('ballots')
   const t = todayStr()
   const qPending = s ? !answers.some((a) => a.date === t && a.user === me()) && answers.some((a) => a.date === t && a.user === other(me())) : false
   const letter = s ? unreadForMe(capsules, reads, me(), t).length > 0 : false
+  const voteWait = s ? votes.some((v) => { const x = voteView(v, ballots, me()); return !x.mine && (v.by !== me() || !!x.theirs) }) : false
   const freeTasks = tasks.filter((x) => !x.done && !x.assignee).length
   const shopCount = useList('shopping').filter((x) => !x.done).length
 
   const open = () => setSettings(true)
-  const usTab = tab === 'us' || tab === 'question' || tab === 'capsules'
+  const usTab = tab === 'us' || tab === 'question' || tab === 'capsules' || tab === 'votes'
   const wishTab = tab === 'wishes' || tab === 'plans'
   const dealsTab = tab === 'tasks' || tab === 'shopping'
 
@@ -91,13 +95,14 @@ export function App({ onLogout }: { onLogout: () => void }) {
       {tab === 'us' && <UsScreen go={setTab} openSettings={open} />}
       {tab === 'question' && <QuestionScreen openSettings={open} onBack={() => setTab('us')} />}
       {tab === 'capsules' && <CapsulesScreen onBack={() => setTab('us')} />}
+      {tab === 'votes' && <VotesScreen onBack={() => setTab('us')} />}
       {tab === 'calendar' && <CalendarScreen openSettings={open} />}
       {wishTab && <TwoModeTab mode={tab} setMode={setTab} openSettings={open} modes={WISH_MODES} />}
       {dealsTab && <TwoModeTab mode={tab} setMode={setTab} openSettings={open} modes={DEAL_MODES} />}
       {tab === 'cards' && <CardsScreen openSettings={open} />}
 
       <nav class="tabbar">
-        <TabBtn on={usTab} onClick={() => setTab('us')} icon={<IUs />} label="Мы" badge={qPending || letter} />
+        <TabBtn on={usTab} onClick={() => setTab('us')} icon={<IUs />} label="Мы" badge={qPending || letter || voteWait} />
         <TabBtn on={tab === 'calendar'} onClick={() => setTab('calendar')} icon={<ICalendar />} label="Календарь" />
         <TabBtn on={wishTab} onClick={() => setTab(wishTab ? tab : 'wishes')} icon={<IGift />} label="Хотелки" />
         <TabBtn

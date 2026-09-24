@@ -211,6 +211,9 @@ export function ProfileEdit({ label, p, onChange }: { label: string; p: Profile;
           onChange={(g) => onChange({ ...p, g })}
         />
       </Field>
+      <Field label="День рождения" hint="Появится в календаре, а за 2 недели партнёру напомним про твои хотелки">
+        <input type="date" value={p.birthday ?? ''} onInput={(e) => onChange({ ...p, birthday: e.currentTarget.value || undefined })} />
+      </Field>
       <Field label="От кого? (для «письмо от …»)" hint="Можно не трогать — угадаем сами">
         <input value={p.gen ?? ''} onInput={(e) => onChange({ ...p, gen: e.currentTarget.value || undefined })} placeholder={guessGen(p.name || (label === 'Ты' ? 'Дмитрий' : 'Софья'), p.g)} />
       </Field>

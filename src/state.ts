@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import { today } from './lib/dates'
-import type { CollName, MetaConfig, Profile, PushConfig, Schema, UserId, UsersConfig, WorkerConfig } from './lib/types'
+import type { CollName, MetaConfig, Person, Profile, PushConfig, Schema, UserId, UsersConfig, WorkerConfig } from './lib/types'
 import type { Store } from './sync/store'
 
 export const DEFAULT_USERS: Record<UserId, Profile> = {
@@ -72,6 +72,19 @@ export function guessGen(name: string, g?: 'm' | 'f'): string {
 export const genOf = (u: UserId) => {
   const p = users()[u]
   return p.gen?.trim() || guessGen(p.name, p.g)
+}
+
+/** Дни рождения из профилей — как «люди» с id me:a / me:b. */
+export function profilePeople(): Person[] {
+  const u = users()
+  const out: Person[] = []
+  for (const k of ['a', 'b'] as UserId[]) {
+    const bd = u[k].birthday
+    if (!bd || !/^\d{4}-\d{2}-\d{2}$/.test(bd)) continue
+    const [y, m, d] = bd.split('-').map(Number)
+    out.push({ id: `me:${k}`, name: u[k].name, day: d, month: m, year: y, whose: k, createdAt: 0, updatedAt: 0, by: k })
+  }
+  return out
 }
 
 export const me = () => current!.me

@@ -29,6 +29,8 @@ data/answers.json       ответы на вопрос дня
 data/tasks.json         задачи
 data/capsules.json      капсулы времени (письма в будущее)
 data/reads.json         кто какое письмо прочитал
+data/votes.json         тайные голосования
+data/ballots.json       голоса (у каждого своя запись)
 data/devices.json       подписки на пуши (по телефону)
 img/YYYY-MM/*.jpg       фото хотелок и капсул
 ```
