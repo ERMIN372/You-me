@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'preact/hooks'
 import { qrSvg } from '../lib/barcode'
 import { currentDeviceId, disableOnThisDevice, enableOnThisDevice, installWorkflow, isIOS, isStandalone, pushSupported, setupPush } from '../lib/push'
-import { other, type Profile, type UserId, type UsersConfig } from '../lib/types'
-import { encodeSetup, loadConn, saveMe } from '../sync/conn'
+import { type Profile, type UserId, type UsersConfig } from '../lib/types'
+import { encodeSetup, loadConn } from '../sync/conn'
 import { isDemo, meta, pushCfg, store, useStoreVersion, users, workerCfg } from '../state'
 import { IRefresh } from '../ui/icons'
 import { Field, Seg, Sheet, toast } from '../ui/kit'
@@ -49,13 +49,6 @@ export function SettingsSheet({ onClose, onLogout }: { onClose: () => void; onLo
     void currentDeviceId().then(setDevId)
   }, [])
 
-  const switchMe = () => {
-    const to = other(me)
-    if (!confirm(`Переключиться на профиль «${u[to].name}»? Это меняет, чьи ответы и хотелки твои на этом устройстве.`)) return
-    saveMe(to)
-    location.reload()
-  }
-
   const run = async (fn: () => Promise<unknown>, ok: string) => {
     setBusy(true)
     try {
@@ -96,10 +89,6 @@ export function SettingsSheet({ onClose, onLogout }: { onClose: () => void; onLo
         <button class="set-row tap" onClick={() => setTogetherOpen(true)}>
           <span>Мы вместе с</span>
           <span class="v">{meta()?.together ? fmtDay(meta()!.together!, true) : 'указать'}</span>
-        </button>
-        <button class="set-row tap" onClick={switchMe}>
-          <span>Переключиться на «{u[other(me)].name}»</span>
-          <span class="v">на этом устройстве</span>
         </button>
       </div>
 
