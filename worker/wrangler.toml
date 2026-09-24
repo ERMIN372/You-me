@@ -1,0 +1,9 @@
+name = "you-me-preview"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+# Откуда разрешены запросы (ваш GitHub Pages). "*" — отовсюду, но всё равно нужен ключ.
+ORIGIN = "https://ermin372.github.io"
+
+# Секрет задаётся отдельно: npx wrangler secret put KEY
