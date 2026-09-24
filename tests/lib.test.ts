@@ -61,8 +61,8 @@ describe('calendar', () => {
 
 describe('money', () => {
   it('formats and parses', () => {
-    expect(fmtMoney(214300, 'RUB')).toBe('214 300 ₽')
-    expect(fmtMoney(2400, 'EUR')).toBe('2 400 €')
+    expect(fmtMoney(214300, 'RUB')).toBe('214\u00a0300\u00a0₽')
+    expect(fmtMoney(2400, 'EUR')).toBe('2\u00a0400\u00a0€')
     expect(parseMoney('7 400,50')).toBe(7400.5)
     expect(parseMoney('')).toBeUndefined()
   })

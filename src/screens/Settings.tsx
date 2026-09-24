@@ -5,10 +5,13 @@ import { other, type Profile, type UserId, type UsersConfig } from '../lib/types
 import { encodeSetup, loadConn, saveMe } from '../sync/conn'
 import { isDemo, meta, pushCfg, store, useStoreVersion, users, workerCfg } from '../state'
 import { IRefresh } from '../ui/icons'
-import { Field, Sheet, toast } from '../ui/kit'
+import { Field, Seg, Sheet, toast } from '../ui/kit'
+import { loadTheme, saveTheme, type ThemeMode } from '../lib/theme'
+import { fmtDay } from '../lib/dates'
 import { ProfileEdit } from './Setup'
+import { TogetherSheet } from './Us'
 
-const APP_VERSION = '1.0.0'
+const APP_VERSION = '1.2.0'
 
 function ago(ts?: number) {
   if (!ts) return 'ещё не было'
@@ -36,6 +39,8 @@ export function SettingsSheet({ onClose, onLogout }: { onClose: () => void; onLo
   const [workerOpen, setWorkerOpen] = useState(false)
   const [devId, setDevId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [theme, setTheme] = useState<ThemeMode>(loadTheme)
+  const [togetherOpen, setTogetherOpen] = useState(false)
   const devices = s.list('devices')
   const push = pushCfg()
   const thisDevice = devId ? devices.find((d) => d.id === devId) : undefined
@@ -88,6 +93,10 @@ export function SettingsSheet({ onClose, onLogout }: { onClose: () => void; onLo
             <span class="v">изменить</span>
           </button>
         ))}
+        <button class="set-row tap" onClick={() => setTogetherOpen(true)}>
+          <span>Мы вместе с</span>
+          <span class="v">{meta()?.together ? fmtDay(meta()!.together!, true) : 'указать'}</span>
+        </button>
         <button class="set-row tap" onClick={switchMe}>
           <span>Переключиться на «{u[other(me)].name}»</span>
           <span class="v">на этом устройстве</span>
@@ -201,6 +210,23 @@ export function SettingsSheet({ onClose, onLogout }: { onClose: () => void; onLo
       </div>
 
       <div class="caps" style={{ margin: '22px 2px 8px' }}>
+        Тема
+      </div>
+      <Seg
+        sm
+        options={[
+          ['auto', 'Как в системе'],
+          ['light', 'Светлая'],
+          ['dark', 'Тёмная'],
+        ]}
+        value={theme}
+        onChange={(m) => {
+          setTheme(m)
+          saveTheme(m)
+        }}
+      />
+
+      <div class="caps" style={{ margin: '22px 2px 8px' }}>
         Прочее
       </div>
       <div class="set-group">
@@ -229,10 +255,11 @@ export function SettingsSheet({ onClose, onLogout }: { onClose: () => void; onLo
             if (confirm('Отключить это устройство? Данные в репозитории останутся, на телефоне — удалятся.')) onLogout()
           }}
         >
-          <span style={{ color: '#ff7a7e' }}>{isDemo() ? 'Выйти из демо' : 'Отключить устройство'}</span>
+          <span style={{ color: 'var(--danger-fg)' }}>{isDemo() ? 'Выйти из демо' : 'Отключить устройство'}</span>
         </button>
       </div>
 
+      {togetherOpen && <TogetherSheet onClose={() => setTogetherOpen(false)} />}
       {editU && <ProfileSheet u={editU} onClose={() => setEditU(null)} />}
       {share && conn && <ShareSheet code={encodeSetup(conn)} onClose={() => setShare(false)} />}
       {workerOpen && <WorkerSheet onClose={() => setWorkerOpen(false)} />}

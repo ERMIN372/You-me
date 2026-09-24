@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import { today } from './lib/dates'
-import type { CollName, MetaConfig, Profile, PushConfig, Schema, UserId, UsersConfig, WorkerConfig } from './lib/types'
+import type { CollName, MetaConfig, Person, Profile, PushConfig, Schema, UserId, UsersConfig, WorkerConfig } from './lib/types'
 import type { Store } from './sync/store'
 
 export const DEFAULT_USERS: Record<UserId, Profile> = {
@@ -52,6 +52,40 @@ export function users(): Record<UserId, Profile> {
 export const meta = () => current?.get('config', 'meta') as MetaConfig | undefined
 export const pushCfg = () => current?.get('config', 'push') as PushConfig | undefined
 export const workerCfg = () => current?.get('config', 'worker') as WorkerConfig | undefined
+
+/** Угадываем родительный падеж имени: Софья → Софьи, Дмитрий → Дмитрия, Ольга → Ольги. */
+export function guessGen(name: string, g?: 'm' | 'f'): string {
+  const n = name.trim()
+  if (n.length < 3 || /\s/.test(n)) return n
+  const low = n.toLowerCase()
+  const last = low.slice(-1)
+  const prev = low.slice(-2, -1)
+  if (last === 'я') return n.slice(0, -1) + 'и'
+  if (last === 'а') return n.slice(0, -1) + ('гкхжшщч'.includes(prev) ? 'и' : 'ы')
+  if (g === 'f') return n
+  if (last === 'й' || last === 'ь') return n.slice(0, -1) + 'я'
+  if (/[бвгджзклмнпрстфхцчшщ]/.test(last)) return n + 'а'
+  return n
+}
+
+/** Имя в родительном падеже («от кого?»). */
+export const genOf = (u: UserId) => {
+  const p = users()[u]
+  return p.gen?.trim() || guessGen(p.name, p.g)
+}
+
+/** Дни рождения из профилей — как «люди» с id me:a / me:b. */
+export function profilePeople(): Person[] {
+  const u = users()
+  const out: Person[] = []
+  for (const k of ['a', 'b'] as UserId[]) {
+    const bd = u[k].birthday
+    if (!bd || !/^\d{4}-\d{2}-\d{2}$/.test(bd)) continue
+    const [y, m, d] = bd.split('-').map(Number)
+    out.push({ id: `me:${k}`, name: u[k].name, day: d, month: m, year: y, whose: k, createdAt: 0, updatedAt: 0, by: k })
+  }
+  return out
+}
 
 export const me = () => current!.me
 export const nameOf = (u: UserId | 'both') => (u === 'both' ? 'Общее' : users()[u].name)

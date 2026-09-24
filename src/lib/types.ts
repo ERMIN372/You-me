@@ -18,6 +18,10 @@ export interface Profile {
   color: string
   /** Для склонения: «добавил» / «добавила». */
   g?: 'm' | 'f'
+  /** Имя в родительном падеже: «от Софьи». Пусто — угадываем. */
+  gen?: string
+  /** День рождения YYYY-MM-DD — для календаря и напоминания о хотелках. */
+  birthday?: string
 }
 
 export interface UsersConfig extends Rec {
@@ -29,6 +33,8 @@ export interface MetaConfig extends Rec {
   timezone: string
   qSeed: number
   qStart: string
+  /** Дата начала отношений — для «N дней вместе» и годовщин. */
+  together?: string
 }
 
 export interface PushConfig extends Rec {
@@ -74,6 +80,7 @@ export interface Wish extends Rec {
   priority: 0 | 1 | 2
   note?: string
   gifted?: boolean
+  giftedAt?: number
 }
 
 /** Тайная бронь подарка. id = id хотелки. Владелец хотелки её не видит. */
@@ -86,10 +93,13 @@ export type PlanKind = 'trip' | 'repair' | 'purchase' | 'celebration' | 'other'
 export interface Plan extends Rec {
   title: string
   kind: PlanKind
+  /** Цель (копилка) или лимит (бюджет). */
   budget: number
+  mode?: 'goal' | 'budget'
   currency: string
   note?: string
   archived?: boolean
+  archivedAt?: number
 }
 
 export interface Expense extends Rec {
@@ -128,6 +138,47 @@ export interface Answer extends Rec {
   cat?: string
 }
 
+/** Задача. Без assignee — «свободная», её можно взять одним касанием. */
+export interface Task extends Rec {
+  title: string
+  note?: string
+  due?: string
+  assignee?: UserId
+  takenAt?: number
+  done: boolean
+  doneAt?: number
+  doneBy?: UserId
+}
+
+/** Капсула времени: письмо, которое откроется в дату openAt. */
+export interface Capsule extends Rec {
+  title: string
+  text: string
+  openAt: string
+  to: UserId | 'both'
+  photo?: string
+}
+
+/** Отметка «прочитано». id = `${capsuleId}:${user}` — у каждого своя запись. */
+export interface CapsuleRead extends Rec {
+  capsuleId: string
+  user: UserId
+}
+
+/** Тайное голосование. Голос партнёра виден только после своего. */
+export interface Vote extends Rec {
+  question: string
+  options: string[]
+}
+
+/** Голос. id = `${voteId}:${user}` — у каждого своя запись. */
+export interface Ballot extends Rec {
+  voteId: string
+  user: UserId
+  choice: number
+  comment?: string
+}
+
 export interface Device extends Rec {
   user: UserId
   sub: PushSubscriptionJSON
@@ -148,6 +199,11 @@ export interface Schema {
   cards: LoyaltyCard
   shopping: ShopItem
   answers: Answer
+  tasks: Task
+  capsules: Capsule
+  reads: CapsuleRead
+  votes: Vote
+  ballots: Ballot
   devices: Device
 }
 
@@ -163,6 +219,11 @@ export const COLLECTIONS: CollName[] = [
   'cards',
   'shopping',
   'answers',
+  'tasks',
+  'capsules',
+  'reads',
+  'votes',
+  'ballots',
   'devices',
 ]
 

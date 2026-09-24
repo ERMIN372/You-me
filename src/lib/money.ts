@@ -23,7 +23,8 @@ const nf = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 })
 
 export function fmtMoney(n: number | undefined, cur: string) {
   if (n === undefined || Number.isNaN(n)) return ''
-  return `${nf.format(n).replace(/[  ]/g, ' ')} ${sym(cur)}`
+  // неразрывные пробелы: «1 760 €» не разъезжается по строкам
+  return `${nf.format(n).replace(/[\u00a0\u202f ]/g, '\u00a0')}\u00a0${sym(cur)}`
 }
 
 /** «7 400,50» / «7400.5» → 7400.5 */
@@ -34,15 +35,27 @@ export function parseMoney(s: string): number | undefined {
   return Number.isFinite(n) ? Math.round(n * 100) / 100 : undefined
 }
 
+/** Копилка (прогресс по собранному) или бюджет (прогресс по потраченному). Старые планы — бюджет. */
+export const planMode = (p: Plan) => p.mode ?? 'budget'
+
 export interface PlanStats {
+  mode: 'goal' | 'budget'
   spent: number
   saved: number
   by: Record<UserId, number>
   savedBy: Record<UserId, number>
+  /** Бюджет: лимит − потрачено. Копилка: цель − собрано. */
   remaining: number
+  /** Бюджет: перерасход. Копилка: собрано сверх цели. */
   over: number
-  /** Кто кому сколько должен, чтобы траты были поровну. */
+  /** Копилка: сколько сейчас лежит (собрано − потрачено). */
+  balance: number
+  /** Бюджет: кто кому переводит, чтобы траты были поровну. */
   settle: { from: UserId; to: UserId; amount: number } | null
+  /** Копилка: кто сколько докладывает, чтобы вклад был поровну. */
+  evenUp: { who: UserId; amount: number } | null
+  /** Сумма, по которой идёт прогресс, и доля от цели/лимита. */
+  main: number
   progress: number
 }
 
@@ -55,19 +68,26 @@ export function planStats(plan: Plan, expenses: Expense[]): PlanStats {
     else by[e.paidBy] += e.amount
   }
   const r2 = (n: number) => Math.round(n * 100) / 100
+  const mode = planMode(plan)
   const spent = r2(by.a + by.b)
   const saved = r2(savedBy.a + savedBy.b)
-  const half = spent / 2
-  const diff = r2(by.a - half)
+  const diff = r2(by.a - spent / 2)
   const settle = Math.abs(diff) < 0.01 ? null : diff > 0 ? { from: 'b' as const, to: 'a' as const, amount: diff } : { from: 'a' as const, to: 'b' as const, amount: -diff }
+  const gap = r2(savedBy.a - savedBy.b)
+  const evenUp = Math.abs(gap) < 0.01 ? null : gap > 0 ? { who: 'b' as const, amount: gap } : { who: 'a' as const, amount: -gap }
+  const main = mode === 'goal' ? saved : spent
   return {
+    mode,
     spent,
     saved,
     by,
     savedBy,
-    remaining: r2(plan.budget - spent),
-    over: r2(Math.max(0, spent - plan.budget)),
+    remaining: r2(plan.budget - main),
+    over: r2(Math.max(0, main - plan.budget)),
+    balance: r2(saved - spent),
     settle,
-    progress: plan.budget > 0 ? spent / plan.budget : 0,
+    evenUp,
+    main,
+    progress: plan.budget > 0 ? main / plan.budget : 0,
   }
 }

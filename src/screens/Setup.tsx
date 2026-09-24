@@ -5,7 +5,7 @@ import type { Profile, UserId, UsersConfig } from '../lib/types'
 import { decodeSetup, memoryPersistence, parseRepo } from '../sync/conn'
 import { GitHubRemote, type Conn } from '../sync/github'
 import { Store } from '../sync/store'
-import { COLORS } from '../state'
+import { COLORS, guessGen } from '../state'
 import { Logo } from '../ui/icons'
 import { Field, Seg, Swatches, toast } from '../ui/kit'
 import { Scanner } from '../ui/Scanner'
@@ -210,6 +210,12 @@ export function ProfileEdit({ label, p, onChange }: { label: string; p: Profile;
           value={p.g ?? 'm'}
           onChange={(g) => onChange({ ...p, g })}
         />
+      </Field>
+      <Field label="День рождения" hint="Появится в календаре, а за 2 недели партнёру напомним про твои хотелки">
+        <input type="date" value={p.birthday ?? ''} onInput={(e) => onChange({ ...p, birthday: e.currentTarget.value || undefined })} />
+      </Field>
+      <Field label="От кого? (для «письмо от …»)" hint="Можно не трогать — угадаем сами">
+        <input value={p.gen ?? ''} onInput={(e) => onChange({ ...p, gen: e.currentTarget.value || undefined })} placeholder={guessGen(p.name || (label === 'Ты' ? 'Дмитрий' : 'Софья'), p.g)} />
       </Field>
       <Field label="Цвет" group>
         <Swatches value={p.color} onChange={(color) => onChange({ ...p, color })} />

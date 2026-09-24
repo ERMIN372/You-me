@@ -31,7 +31,7 @@ export function WishList({ creating, onCreated }: { creating: boolean; onCreated
   const gifted = wishes.filter((w) => w.gifted && (filter === 'all' || w.owner === filter)).sort((a, b) => b.updatedAt - a.updatedAt)
 
   const chip = (f: Filter, label: string) => (
-    <button class={`chip ${filter === f ? 'on' : ''}`} style={filter === f ? { background: f === 'all' ? 'var(--text)' : colorOf(f) } : undefined} onClick={() => setFilter(f)}>
+    <button class={`chip ${filter === f ? 'on' : ''}`} style={filter === f ? { background: f === 'all' ? 'var(--text)' : colorOf(f), color: f === 'all' ? 'var(--on-text)' : undefined } : undefined} onClick={() => setFilter(f)}>
       {label}
     </button>
   )
@@ -46,7 +46,7 @@ export function WishList({ creating, onCreated }: { creating: boolean; onCreated
       <div class="list">
         {shown.length === 0 && (
           <Empty icon="🎁">
-            {filter === i ? 'Добавь то, что хочешь получить — ссылку, цену, фото.' : filter === partner ? `${u[partner].name} пока ничего не добавил(а).` : 'Пока пусто.'}
+            {filter === i ? 'Добавь то, что хочешь получить — ссылку, цену, фото.' : filter === partner ? `${u[partner].name} пока ничего не ${verb(partner, 'добавил', 'добавила')}.` : 'Пока пусто.'}
           </Empty>
         )}
         {shown.map((w) => (
@@ -119,7 +119,7 @@ function WishDetail({ w, onClose, onEdit }: { w: Wish; onClose: () => void; onEd
     }
   }
   const toggleGifted = () => {
-    store().put('wishes', { ...w, gifted: !w.gifted })
+    store().put('wishes', { ...w, gifted: !w.gifted, giftedAt: w.gifted ? undefined : Date.now() })
     if (!w.gifted) toast('Ура! Хотелка в архиве')
     onClose()
   }
