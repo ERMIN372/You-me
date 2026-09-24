@@ -28,19 +28,35 @@ export async function generateVapid(): Promise<{ publicKey: string; privateKey: 
   return { publicKey: b64url(pub), privateKey: jwk.d! }
 }
 
-/** Кладёт workflow и скрипт уведомлений в репо с данными. Нужен доступ токена «Workflows: Read and write». */
+/** git blob sha1 — чтобы понять, что файл в репо уже такой же (например, скопирован вручную). */
+async function gitSha(text: string) {
+  const body = new TextEncoder().encode(text)
+  const head = new TextEncoder().encode(`blob ${body.length}\0`)
+  const all = new Uint8Array(head.length + body.length)
+  all.set(head)
+  all.set(body, head.length)
+  const d = new Uint8Array(await crypto.subtle.digest('SHA-1', all))
+  return Array.from(d, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+/** Кладёт workflow и скрипт уведомлений в репо с данными. Для файла в .github/workflows нужно право «Workflows: Read and write». */
 export async function installWorkflow(): Promise<void> {
   const r = store().remote
   for (const [path, text] of [
     [SCRIPT_PATH, notifyScript],
     [WORKFLOW_PATH, workflowYml],
   ] as const) {
+    const sha = (await r.fileSha(path)) ?? undefined
+    if (sha && sha === (await gitSha(text))) continue // уже на месте
     try {
-      const sha = (await r.fileSha(path)) ?? undefined
       await r.put(path, text, sha, 'You&Me: автоматизация уведомлений')
     } catch (e) {
       if (e instanceof HttpError && (e.status === 403 || e.status === 404)) {
-        throw new Error('Токену не хватает права «Workflows: Read and write». Добавь его в настройках токена на GitHub или скопируй файлы из папки data-repo вручную.')
+        throw new Error(
+          path === WORKFLOW_PATH
+            ? `GitHub не дал записать ${path} (${e.status}). У токена нет права «Workflows: Read and write»: GitHub → Settings → Developer settings → Fine-grained tokens → токен → Edit → Repository permissions → Workflows → Read and write → Update. Токен менять в приложении не нужно.`
+            : `GitHub не дал записать ${path}: ${e.message}`,
+        )
       }
       throw e
     }
@@ -50,14 +66,10 @@ export async function installWorkflow(): Promise<void> {
 export async function setupPush(appUrl: string): Promise<PushConfig> {
   const existing = pushCfg()
   const keys = existing ?? (await generateVapid())
+  // ключи сохраняем сразу — повторная попытка не будет плодить новые
+  store().put('config', { id: 'push', publicKey: keys.publicKey, privateKey: keys.privateKey, subject: existing?.subject ?? appUrl, installed: false })
   await installWorkflow()
-  return store().put('config', {
-    id: 'push',
-    publicKey: keys.publicKey,
-    privateKey: keys.privateKey,
-    subject: existing?.subject ?? appUrl,
-    installed: true,
-  }) as unknown as PushConfig
+  return store().put('config', { ...pushCfg()!, installed: true }) as unknown as PushConfig
 }
 
 async function registration() {
