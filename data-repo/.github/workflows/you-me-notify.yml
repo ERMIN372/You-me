@@ -1,0 +1,52 @@
+# Пуш-уведомления для You&Me. Ставится в ПРИВАТНЫЙ репозиторий с данными (приложение делает это само).
+# - repository_dispatch «notify» — приложение шлёт, когда партнёр что-то добавил/ответил;
+# - schedule — утренняя сводка (ДР, события) и вечернее напоминание про «Вопрос дня».
+# Время в cron — UTC. 06:00 UTC = 09:00 МСК, 17:00 UTC = 20:00 МСК.
+name: You&Me notify
+
+on:
+  repository_dispatch:
+    types: [notify]
+  schedule:
+    - cron: '0 6 * * *'
+    - cron: '0 17 * * *'
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: 'morning | evening'
+        default: morning
+
+permissions:
+  contents: write
+
+concurrency:
+  group: you-me-notify
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-save --no-audit --no-fund web-push@3.6.7
+      - name: Send
+        env:
+          EVENT: ${{ github.event_name }}
+          PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+          SCHEDULE: ${{ github.event.schedule }}
+          KIND: ${{ github.event.inputs.kind }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: node .github/you-me/notify.mjs
+      - name: Save pruned subscriptions
+        run: |
+          if [ -n "$(git status --porcelain data/devices.json 2>/dev/null)" ]; then
+            git config user.name "you-me-bot"
+            git config user.email "you-me-bot@users.noreply.github.com"
+            git add data/devices.json
+            git commit -m "notify: убрать устаревшие подписки"
+            git push || echo "push skipped"
+          fi
