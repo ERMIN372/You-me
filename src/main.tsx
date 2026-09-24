@@ -8,6 +8,7 @@ import { useEffect, useState } from 'preact/hooks'
 import { registerSW } from 'virtual:pwa-register'
 import { App } from './app'
 import { canNotify } from './lib/push'
+import { applyTheme, watchSystemTheme } from './lib/theme'
 import type { UserId } from './lib/types'
 import { initialMeta, Setup, type SetupResult } from './screens/Setup'
 import { clearState, idbPersistence, loadConn, loadMe, saveConn, saveMe } from './sync/conn'
@@ -17,6 +18,8 @@ import { setStore, users } from './state'
 import { Logo } from './ui/icons'
 import { Toasts } from './ui/kit'
 
+applyTheme()
+watchSystemTheme()
 if ('serviceWorker' in navigator && !import.meta.env.DEV) registerSW({ immediate: true })
 
 const nsOf = (c: Conn) => `${c.owner}/${c.repo}`

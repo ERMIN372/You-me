@@ -53,6 +53,27 @@ export const meta = () => current?.get('config', 'meta') as MetaConfig | undefin
 export const pushCfg = () => current?.get('config', 'push') as PushConfig | undefined
 export const workerCfg = () => current?.get('config', 'worker') as WorkerConfig | undefined
 
+/** Угадываем родительный падеж имени: Софья → Софьи, Дмитрий → Дмитрия, Ольга → Ольги. */
+export function guessGen(name: string, g?: 'm' | 'f'): string {
+  const n = name.trim()
+  if (n.length < 3 || /\s/.test(n)) return n
+  const low = n.toLowerCase()
+  const last = low.slice(-1)
+  const prev = low.slice(-2, -1)
+  if (last === 'я') return n.slice(0, -1) + 'и'
+  if (last === 'а') return n.slice(0, -1) + ('гкхжшщч'.includes(prev) ? 'и' : 'ы')
+  if (g === 'f') return n
+  if (last === 'й' || last === 'ь') return n.slice(0, -1) + 'я'
+  if (/[бвгджзклмнпрстфхцчшщ]/.test(last)) return n + 'а'
+  return n
+}
+
+/** Имя в родительном падеже («от кого?»). */
+export const genOf = (u: UserId) => {
+  const p = users()[u]
+  return p.gen?.trim() || guessGen(p.name, p.g)
+}
+
 export const me = () => current!.me
 export const nameOf = (u: UserId | 'both') => (u === 'both' ? 'Общее' : users()[u].name)
 export const colorOf = (u: UserId | 'both') => (u === 'both' ? '#1fb5a8' : users()[u].color)

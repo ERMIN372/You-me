@@ -2,9 +2,9 @@ import { useState } from 'preact/hooks'
 import { other, type ShopItem } from '../lib/types'
 import { colorOf, me, nameOf, store, useList, verb } from '../state'
 import { ICheck, IPlus, IX } from '../ui/icons'
-import { Duo, Empty, Glow } from '../ui/kit'
+import { Empty } from '../ui/kit'
 
-export function ShoppingScreen({ openSettings }: { openSettings: () => void }) {
+export function ShoppingList() {
   const items = useList('shopping')
   const [text, setText] = useState('')
   const todo = items.filter((x) => !x.done).sort((a, b) => b.createdAt - a.createdAt)
@@ -42,21 +42,8 @@ export function ShoppingScreen({ openSettings }: { openSettings: () => void }) {
   }
 
   return (
-    <div class="screen">
-      <Glow color="rgba(40, 110, 70, 0.3)" />
-      <div class="head">
-        <div>
-          <div class="caps">
-            {todo.length ? `${todo.length} в списке` : 'всё куплено'}
-          </div>
-          <h1>Покупки</h1>
-        </div>
-        <div class="actions">
-          <Duo size={34} onClick={openSettings} />
-        </div>
-      </div>
-
-      <form class="add-bar" onSubmit={add}>
+    <>
+      <form class="add-bar" onSubmit={add} style={{ marginTop: 14 }}>
         <input class="input" value={text} onInput={(e) => setText(e.currentTarget.value)} placeholder="Молоко, хлеб, сыр…" enterKeyHint="done" />
         <button class="icon-btn" type="submit" aria-label="Добавить" style={{ width: 50, height: 50 }}>
           <IPlus />
@@ -82,7 +69,7 @@ export function ShoppingScreen({ openSettings }: { openSettings: () => void }) {
           ))}
         </>
       )}
-    </div>
+    </>
   )
 }
 

@@ -5,6 +5,7 @@ import { colorOf, nameOf, store, useList, verb } from '../state'
 import { IPlus, IScan } from '../ui/icons'
 import { Duo, Empty, Field, Glow, Sheet, Swatches, toast } from '../ui/kit'
 import { Scanner } from '../ui/Scanner'
+import { setBarColor } from '../lib/theme'
 
 const CARD_COLORS = ['#d8312f', '#1f8f3a', '#ef7d00', '#1e62d0', '#6a3fc8', '#26272c', '#e0a800', '#d6336c', '#0f8f86', '#7a4a2a']
 
@@ -71,12 +72,11 @@ function BarcodeView({ c, onClose, onEdit }: { c: LoyaltyCard; onClose: () => vo
     void req()
     const onVis = () => document.visibilityState === 'visible' && void req()
     document.addEventListener('visibilitychange', onVis)
-    const meta = document.querySelector('meta[name="theme-color"]')
-    meta?.setAttribute('content', '#ffffff')
+    setBarColor('#ffffff')
     return () => {
       document.removeEventListener('visibilitychange', onVis)
       void lock?.release().catch(() => undefined)
-      meta?.setAttribute('content', '#0f1013')
+      setBarColor()
     }
   }, [])
 

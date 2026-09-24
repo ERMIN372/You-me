@@ -155,3 +155,36 @@ export const Logo = ({ size = 30 }: { size?: number }) => (
     <circle cx="33" cy="15" r="14" fill="#f3efe8" opacity="0.55" clip-path="url(#lg-l)" />
   </svg>
 )
+
+export const IUs = ({ size, ...r }: P) => (
+  <svg {...base(size, r)}>
+    <circle cx="8.8" cy="12" r="5.8" />
+    <circle cx="15.2" cy="12" r="5.8" />
+  </svg>
+)
+export const ITasks = ({ size, ...r }: P) => (
+  <svg {...base(size, r)}>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="4" />
+    <path d="m8 12.3 2.8 2.7L16.3 9" />
+  </svg>
+)
+export const IMail = ({ size, ...r }: P) => (
+  <svg {...base(size, r)}>
+    <rect x="3" y="5" width="18" height="14" rx="2.5" />
+    <path d="m3.5 6.5 8.5 6.5 8.5-6.5" />
+  </svg>
+)
+export const IMailOpen = ({ size, ...r }: P) => (
+  <svg {...base(size, r)}>
+    <path d="M3 10.5 12 4l9 6.5V19a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 19v-8.5Z" />
+    <path d="m3.5 11 8.5 6 8.5-6" />
+  </svg>
+)
+export const ILockClock = ({ size, ...r }: P) => (
+  <svg {...base(size, r)}>
+    <path d="M13 21H6.5A2.5 2.5 0 0 1 4 18.5v-5A2.5 2.5 0 0 1 6.5 11h11" />
+    <path d="M7.5 11V7.5a4.5 4.5 0 0 1 9 0V11" />
+    <circle cx="17.5" cy="17.5" r="4" />
+    <path d="M17.5 15.8v1.9l1.2.8" />
+  </svg>
+)

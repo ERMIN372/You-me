@@ -171,7 +171,7 @@ export function CalendarScreen({ openSettings }: { openSettings: () => void }) {
   )
 }
 
-function UpItem({ o, today, onClick }: { o: Occurrence; today: string; onClick: () => void }) {
+export function UpItem({ o, today, onClick }: { o: Occurrence; today: string; onClick: () => void }) {
   const ongoing = dayNum(o.date) < dayNum(today) && dayNum(o.end) >= dayNum(today)
   const d = ongoing ? today : o.date
   const label = ongoing ? 'идёт' : diffDays(today, d) > 6 ? MONTHS_SHORT[parts(d).m - 1] : relLabel(d, today)

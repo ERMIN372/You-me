@@ -3,8 +3,8 @@ import { CATEGORIES } from '../data/questions'
 import { addDays, dayNum, days, fmtDay } from '../lib/dates'
 import { questionFor } from '../lib/qday'
 import { other, type Answer, type UserId } from '../lib/types'
-import { colorOf, me, meta, nameOf, store, todayStr, useList, verb } from '../state'
-import { ILock } from '../ui/icons'
+import { colorOf, genOf, me, meta, nameOf, store, todayStr, useList, verb } from '../state'
+import { IChevL, ILock } from '../ui/icons'
 import { Duo, Glow, Sheet, toast } from '../ui/kit'
 
 function qOf(date: string) {
@@ -37,7 +37,7 @@ function submit(date: string, text: string, q: { q: string; cat: string }, hadTh
   }
 }
 
-export function QuestionScreen({ openSettings }: { openSettings: () => void }) {
+export function QuestionScreen({ openSettings, onBack }: { openSettings: () => void; onBack: () => void }) {
   const t = todayStr()
   const { mine, theirs, q, p } = useDay(t)
   const answers = useList('answers')
@@ -64,6 +64,9 @@ export function QuestionScreen({ openSettings }: { openSettings: () => void }) {
   return (
     <div class="screen">
       <Glow color="rgba(60, 50, 140, 0.35)" />
+      <button class="back tap" onClick={onBack}>
+        <IChevL size={20} /> Мы
+      </button>
       <div class="head">
         <div>
           <div class="caps">Вопрос дня · {fmtDay(t)}</div>
@@ -150,14 +153,14 @@ function Locked({ u }: { u: UserId }) {
   return (
     <div class="locked">
       <ILock size={22} />
-      <span>Ждём ответ {nameOf(u)}. Откроется, когда ответите оба.</span>
+      <span>Ждём ответа {genOf(u)}. Откроется, когда ответите оба.</span>
     </div>
   )
 }
 
 function ArchiveItem({ date, onClick }: { date: string; onClick: () => void }) {
   const { mine, theirs, q, p } = useDay(date)
-  const status = mine && theirs ? '💬 оба ответили' : mine ? `ждём ${nameOf(p)}` : theirs ? `🔒 ${nameOf(p)} ${verb(p, 'ответил', 'ответила')}` : 'без ответов'
+  const status = mine && theirs ? '💬 оба ответили' : mine ? `ждём ответа ${genOf(p)}` : theirs ? `🔒 ${nameOf(p)} ${verb(p, 'ответил', 'ответила')}` : 'без ответов'
   return (
     <button class="arch-item tap" onClick={onClick}>
       <div class="row between">

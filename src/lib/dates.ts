@@ -110,3 +110,23 @@ export function relLabel(s: string, now: string) {
   if (d === -1) return 'вчера'
   return WD_SHORT[weekday(s)]
 }
+
+const ORD_GEN = ['', 'первой', 'второй', 'третьей', 'четвёртой', 'пятой', 'шестой', 'седьмой', 'восьмой', 'девятой', 'десятой', 'одиннадцатой', 'двенадцатой', 'тринадцатой', 'четырнадцатой', 'пятнадцатой', 'шестнадцатой', 'семнадцатой', 'восемнадцатой', 'девятнадцатой', 'двадцатой', 'двадцать первой', 'двадцать второй', 'двадцать третьей', 'двадцать четвёртой', 'двадцать пятой']
+
+/** «до четвёртой годовщины» */
+export const ordinalGen = (n: number) => ORD_GEN[n] ?? `${n}-й`
+
+/** «сегодня, вчера, 3 дня назад, 12 авг» по метке времени. */
+export function dateOf(ts: number) {
+  const dt = new Date(ts)
+  return ymd(dt.getFullYear(), dt.getMonth() + 1, dt.getDate())
+}
+
+export function agoDay(ts: number, now: string) {
+  const d = dateOf(ts)
+  const n = diffDays(d, now)
+  if (n <= 0) return 'сегодня'
+  if (n === 1) return 'вчера'
+  if (n < 7) return `${days(n)} назад`
+  return fmtDay(d)
+}

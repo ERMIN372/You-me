@@ -214,7 +214,16 @@ function PlanForm({ init, onClose }: { init: Partial<Plan>; onClose: (id?: strin
     if (!title.trim()) return toast('Как назовём план?')
     const b = parseMoney(budget)
     if (b === undefined || b < 0) return toast('Укажи бюджет')
-    const rec = store().put('plans', { id: init.id, title: title.trim(), kind, budget: b, currency, note: note.trim() || undefined, archived: archived || undefined })
+    const rec = store().put('plans', {
+      id: init.id,
+      title: title.trim(),
+      kind,
+      budget: b,
+      currency,
+      note: note.trim() || undefined,
+      archived: archived || undefined,
+      archivedAt: archived ? (init.archivedAt ?? Date.now()) : undefined,
+    })
     if (!init.id) {
       const i = me()
       store().notify({ to: other(i), title: `${nameOf(i)} ${verb(i, 'создал', 'создала')} план`, body: `${rec.title} · ${fmtMoney(b, currency)}`, url: '#plans' })
